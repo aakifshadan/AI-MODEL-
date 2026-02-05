@@ -308,6 +308,25 @@
             min-width: 0;
         }
 
+        .model-tag {
+            display: inline-block;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .model-tag.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .message.error .message-content {
+            color: #ef4444;
+        }
+
         .message-content p {
             margin-bottom: 12px;
         }
@@ -547,6 +566,224 @@
                 display: block;
             }
         }
+
+        /* Settings Button */
+        .settings-btn {
+            width: 100%;
+            padding: 10px 12px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .settings-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .settings-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .settings-description {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .api-key-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .api-key-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .api-key-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .key-status {
+            margin-left: auto;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .key-status.configured {
+            background: rgba(16, 163, 127, 0.2);
+            color: #10a37f;
+        }
+
+        .key-status.missing {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .api-key-input-wrapper {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .api-key-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .toggle-visibility {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .toggle-visibility:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .get-key-link {
+            font-size: 12px;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .get-key-link:hover {
+            text-decoration: underline;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
     </style>
 
     <!-- Provider Icons (hidden, used by JS) -->
@@ -601,6 +838,13 @@
         </div>
 
         <div class="sidebar-footer">
+            <button class="settings-btn" onclick="openSettings()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>Settings</span>
+            </button>
             <button class="theme-toggle" onclick="toggleTheme()">
                 <span id="theme-icon">🌙</span>
                 <span id="theme-text">Dark Mode</span>
@@ -676,6 +920,85 @@
             </div>
         </div>
     </main>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal" onclick="closeSettingsOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="modal-close" onclick="closeSettings()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>API Keys</h3>
+                    <p class="settings-description">Enter your API keys to use each provider. Keys are encrypted and stored locally.</p>
+                    
+                    <div class="api-key-item">
+                        <div class="api-key-header">
+                            <img src="https://cdn.oaistatic.com/assets/favicon-miwirzcw.ico" width="20" height="20" alt="OpenAI" style="border-radius: 4px;">
+                            <span>OpenAI</span>
+                            <span class="key-status" id="status-openai"></span>
+                        </div>
+                        <div class="api-key-input-wrapper">
+                            <input type="password" id="key-openai" placeholder="sk-..." class="api-key-input">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('openai')">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="https://platform.openai.com/api-keys" target="_blank" class="get-key-link">Get API key →</a>
+                    </div>
+
+                    <div class="api-key-item">
+                        <div class="api-key-header">
+                            <img src="https://www.anthropic.com/images/icons/apple-touch-icon.png" width="20" height="20" alt="Claude" style="border-radius: 4px;">
+                            <span>Anthropic (Claude)</span>
+                            <span class="key-status" id="status-anthropic"></span>
+                        </div>
+                        <div class="api-key-input-wrapper">
+                            <input type="password" id="key-anthropic" placeholder="sk-ant-..." class="api-key-input">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('anthropic')">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="https://console.anthropic.com/settings/keys" target="_blank" class="get-key-link">Get API key →</a>
+                    </div>
+
+                    <div class="api-key-item">
+                        <div class="api-key-header">
+                            <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" width="20" height="20" alt="Gemini">
+                            <span>Google (Gemini)</span>
+                            <span class="key-status" id="status-google"></span>
+                        </div>
+                        <div class="api-key-input-wrapper">
+                            <input type="password" id="key-google" placeholder="AIza..." class="api-key-input">
+                            <button class="toggle-visibility" onclick="toggleKeyVisibility('google')">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-key-link">Get API key →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
+                <button class="btn-primary" onclick="saveSettings()">Save Keys</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // State
@@ -859,18 +1182,26 @@
 
         function renderMessages(messages) {
             const wrapper = document.getElementById('messages-wrapper');
-            const provider = document.getElementById('provider-select').value;
+            const currentProvider = document.getElementById('provider-select').value;
 
-            wrapper.innerHTML = messages.map(msg => `
-                <div class="message ${msg.role}">
+            wrapper.innerHTML = messages.map(msg => {
+                // Use the provider stored with the message, or fall back to current
+                const msgProvider = msg.provider || currentProvider;
+                const msgModel = msg.model || '';
+                const modelName = msgModel && models[msgProvider] ? (models[msgProvider].models[msgModel] || msgModel) : '';
+                const isError = msg.is_error || false;
+                
+                return `
+                <div class="message ${msg.role}${isError ? ' error' : ''}">
                     <div class="message-avatar">
-                        ${msg.role === 'user' ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' : providerIcons[provider]}
+                        ${msg.role === 'user' ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' : providerIcons[msgProvider]}
                     </div>
                     <div class="message-content">
+                        ${msg.role === 'assistant' && modelName ? `<div class="model-tag${isError ? ' error' : ''}">${modelName}</div>` : ''}
                         ${msg.role === 'assistant' ? marked.parse(msg.content) : escapeHtml(msg.content)}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
 
             // Highlight code blocks
             wrapper.querySelectorAll('pre code').forEach(block => {
@@ -880,22 +1211,25 @@
             scrollToBottom();
         }
 
-        function addMessage(role, content) {
+        function addMessage(role, content, msgProvider = null, msgModel = null, isError = false) {
             const wrapper = document.getElementById('messages-wrapper');
             const welcomeScreen = document.getElementById('welcome-screen');
             if (welcomeScreen) {
                 welcomeScreen.remove();
             }
 
-            const provider = document.getElementById('provider-select').value;
+            const provider = msgProvider || document.getElementById('provider-select').value;
+            const model = msgModel || document.getElementById('model-select').value;
+            const modelName = models[provider] ? (models[provider].models[model] || model) : '';
 
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
+            messageDiv.className = `message ${role}${isError ? ' error' : ''}`;
             messageDiv.innerHTML = `
                 <div class="message-avatar">
                     ${role === 'user' ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' : providerIcons[provider]}
                 </div>
                 <div class="message-content">
+                    ${role === 'assistant' && modelName ? `<div class="model-tag${isError ? ' error' : ''}">${modelName}</div>` : ''}
                     ${role === 'assistant' ? marked.parse(content) : escapeHtml(content)}
                 </div>
             `;
@@ -974,15 +1308,20 @@
                 removeTypingIndicator();
 
                 if (data.error) {
-                    addMessage('assistant', `Error: ${data.error}`);
+                    addMessage('assistant', `Error: ${data.error}`, data.provider || provider, data.model || model, true);
+                    // Update conversation ID even on error
+                    if (data.conversation_id) {
+                        currentConversationId = data.conversation_id;
+                        loadConversations();
+                    }
                 } else {
-                    addMessage('assistant', data.response);
+                    addMessage('assistant', data.response, data.provider, data.model);
                     currentConversationId = data.conversation_id;
                     loadConversations();
                 }
             } catch (error) {
                 removeTypingIndicator();
-                addMessage('assistant', `Error: ${error.message}`);
+                addMessage('assistant', `Error: ${error.message}`, provider, model, true);
             } finally {
                 isLoading = false;
                 document.getElementById('send-btn').disabled = false;
@@ -1048,6 +1387,92 @@
         function closeSidebar() {
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('overlay').classList.remove('show');
+        }
+
+        // Settings Modal
+        async function openSettings() {
+            document.getElementById('settings-modal').classList.add('show');
+            await loadApiKeyStatus();
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('show');
+        }
+
+        function closeSettingsOnOverlay(event) {
+            if (event.target.id === 'settings-modal') {
+                closeSettings();
+            }
+        }
+
+        async function loadApiKeyStatus() {
+            try {
+                const response = await fetch('/api/keys');
+                const status = await response.json();
+                
+                for (const [provider, info] of Object.entries(status)) {
+                    const statusEl = document.getElementById(`status-${provider}`);
+                    if (info.configured) {
+                        statusEl.textContent = 'Configured';
+                        statusEl.className = 'key-status configured';
+                        document.getElementById(`key-${provider}`).placeholder = info.masked;
+                    } else {
+                        statusEl.textContent = 'Not set';
+                        statusEl.className = 'key-status missing';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load API key status:', error);
+            }
+        }
+
+        function toggleKeyVisibility(provider) {
+            const input = document.getElementById(`key-${provider}`);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        async function saveSettings() {
+            const keys = {
+                openai: document.getElementById('key-openai').value,
+                anthropic: document.getElementById('key-anthropic').value,
+                google: document.getElementById('key-google').value
+            };
+
+            // Only include non-empty keys
+            const keysToSave = {};
+            for (const [provider, key] of Object.entries(keys)) {
+                if (key.trim()) {
+                    keysToSave[provider] = key.trim();
+                }
+            }
+
+            if (Object.keys(keysToSave).length === 0) {
+                closeSettings();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(keysToSave)
+                });
+
+                if (response.ok) {
+                    // Clear inputs
+                    document.getElementById('key-openai').value = '';
+                    document.getElementById('key-anthropic').value = '';
+                    document.getElementById('key-google').value = '';
+                    
+                    await loadApiKeyStatus();
+                    closeSettings();
+                } else {
+                    alert('Failed to save API keys');
+                }
+            } catch (error) {
+                console.error('Failed to save settings:', error);
+                alert('Failed to save API keys');
+            }
         }
     </script>
 </body>
