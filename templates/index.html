@@ -118,6 +118,45 @@
             outline: none;
             border-color: var(--accent-color);
         }
+
+        /* Usage Stats in Sidebar */
+        .usage-stats {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .usage-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .usage-row:not(:last-child) {
+            margin-bottom: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .usage-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .usage-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+        }
+
+        .usage-cost {
+            color: var(--accent-color);
+        }
     </style>
 </head>
 
@@ -784,6 +823,69 @@
         .btn-secondary:hover {
             background: var(--bg-hover);
         }
+
+        /* User Profile */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            object-fit: cover;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: var(--bg-hover);
+            color: var(--error-color, #ef4444);
+        }
     </style>
 
     <!-- Provider Icons (hidden, used by JS) -->
@@ -831,6 +933,18 @@
 
             <label>Model</label>
             <select id="model-select"></select>
+
+            <!-- Usage Stats -->
+            <div class="usage-stats" id="usage-stats">
+                <div class="usage-row">
+                    <span class="usage-label">Tokens</span>
+                    <span class="usage-value" id="total-tokens">0</span>
+                </div>
+                <div class="usage-row">
+                    <span class="usage-label">Cost</span>
+                    <span class="usage-value usage-cost" id="total-cost">$0.00</span>
+                </div>
+            </div>
         </div>
 
         <div class="conversations-list" id="conversations-list">
@@ -838,10 +952,26 @@
         </div>
 
         <div class="sidebar-footer">
+            <div class="user-profile" id="user-profile">
+                <img id="user-avatar" src="" alt="" class="user-avatar">
+                <div class="user-info">
+                    <span id="user-name" class="user-name"></span>
+                    <span id="user-email" class="user-email"></span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Sign out">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
             <button class="settings-btn" onclick="openSettings()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
                 </svg>
                 <span>Settings</span>
             </button>
@@ -936,66 +1066,102 @@
             <div class="modal-body">
                 <div class="settings-section">
                     <h3>API Keys</h3>
-                    <p class="settings-description">Enter your API keys to use each provider. Keys are encrypted and stored locally.</p>
-                    
+                    <p class="settings-description">Enter your API keys to use each provider. Keys are encrypted and
+                        stored locally.</p>
+
                     <div class="api-key-item">
                         <div class="api-key-header">
-                            <img src="https://cdn.oaistatic.com/assets/favicon-miwirzcw.ico" width="20" height="20" alt="OpenAI" style="border-radius: 4px;">
+                            <img src="https://cdn.oaistatic.com/assets/favicon-miwirzcw.ico" width="20" height="20"
+                                alt="OpenAI" style="border-radius: 4px;">
                             <span>OpenAI</span>
                             <span class="key-status" id="status-openai"></span>
                         </div>
                         <div class="api-key-input-wrapper">
                             <input type="password" id="key-openai" placeholder="sk-..." class="api-key-input">
                             <button class="toggle-visibility" onclick="toggleKeyVisibility('openai')">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
                             </button>
                         </div>
-                        <a href="https://platform.openai.com/api-keys" target="_blank" class="get-key-link">Get API key →</a>
+                        <a href="https://platform.openai.com/api-keys" target="_blank" class="get-key-link">Get API key
+                            →</a>
                     </div>
 
                     <div class="api-key-item">
                         <div class="api-key-header">
-                            <img src="https://www.anthropic.com/images/icons/apple-touch-icon.png" width="20" height="20" alt="Claude" style="border-radius: 4px;">
+                            <img src="https://www.anthropic.com/images/icons/apple-touch-icon.png" width="20"
+                                height="20" alt="Claude" style="border-radius: 4px;">
                             <span>Anthropic (Claude)</span>
                             <span class="key-status" id="status-anthropic"></span>
                         </div>
                         <div class="api-key-input-wrapper">
                             <input type="password" id="key-anthropic" placeholder="sk-ant-..." class="api-key-input">
                             <button class="toggle-visibility" onclick="toggleKeyVisibility('anthropic')">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
                             </button>
                         </div>
-                        <a href="https://console.anthropic.com/settings/keys" target="_blank" class="get-key-link">Get API key →</a>
+                        <a href="https://console.anthropic.com/settings/keys" target="_blank" class="get-key-link">Get
+                            API key →</a>
                     </div>
 
                     <div class="api-key-item">
                         <div class="api-key-header">
-                            <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" width="20" height="20" alt="Gemini">
+                            <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg"
+                                width="20" height="20" alt="Gemini">
                             <span>Google (Gemini)</span>
                             <span class="key-status" id="status-google"></span>
                         </div>
                         <div class="api-key-input-wrapper">
                             <input type="password" id="key-google" placeholder="AIza..." class="api-key-input">
                             <button class="toggle-visibility" onclick="toggleKeyVisibility('google')">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
                             </button>
                         </div>
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-key-link">Get API key →</a>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="get-key-link">Get API
+                            key →</a>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
                 <button class="btn-primary" onclick="saveSettings()">Save Keys</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Stats Modal -->
+    <div class="modal-overlay" id="usage-modal" onclick="closeUsageOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Usage Statistics</h2>
+                <button class="modal-close" onclick="closeUsageStats()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Total Usage</h3>
+                    <div id="usage-stats-content" style="padding: 20px; text-align: center; color: var(--text-muted);">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeUsageStats()">Close</button>
             </div>
         </div>
     </div>
@@ -1045,9 +1211,11 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            loadUserProfile();
             updateSubModels();
             loadConversations();
             loadTheme();
+            loadTotalUsageStats();
 
             // Configure marked for markdown rendering
             marked.setOptions({
@@ -1060,6 +1228,39 @@
                 breaks: true
             });
         });
+
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/user');
+                const user = await response.json();
+
+                if (user) {
+                    document.getElementById('user-name').textContent = user.name;
+                    document.getElementById('user-email').textContent = user.email;
+
+                    const avatar = document.getElementById('user-avatar');
+                    if (user.picture) {
+                        avatar.src = user.picture;
+                        avatar.alt = user.name;
+                    } else {
+                        // Show initials
+                        avatar.style.display = 'none';
+                        const initials = document.createElement('div');
+                        initials.className = 'user-avatar';
+                        initials.textContent = user.name.charAt(0).toUpperCase();
+                        avatar.parentNode.insertBefore(initials, avatar);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load user profile:', error);
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to sign out?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
 
         function updateSubModels() {
             const provider = document.getElementById('provider-select').value;
@@ -1190,7 +1391,7 @@
                 const msgModel = msg.model || '';
                 const modelName = msgModel && models[msgProvider] ? (models[msgProvider].models[msgModel] || msgModel) : '';
                 const isError = msg.is_error || false;
-                
+
                 return `
                 <div class="message ${msg.role}${isError ? ' error' : ''}">
                     <div class="message-avatar">
@@ -1211,7 +1412,7 @@
             scrollToBottom();
         }
 
-        function addMessage(role, content, msgProvider = null, msgModel = null, isError = false) {
+        function addMessage(role, content, msgProvider = null, msgModel = null, isError = false, usage = null) {
             const wrapper = document.getElementById('messages-wrapper');
             const welcomeScreen = document.getElementById('welcome-screen');
             if (welcomeScreen) {
@@ -1224,6 +1425,7 @@
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}${isError ? ' error' : ''}`;
+
             messageDiv.innerHTML = `
                 <div class="message-avatar">
                     ${role === 'user' ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' : providerIcons[provider]}
@@ -1315,9 +1517,10 @@
                         loadConversations();
                     }
                 } else {
-                    addMessage('assistant', data.response, data.provider, data.model);
+                    addMessage('assistant', data.response, data.provider, data.model, false, data.usage);
                     currentConversationId = data.conversation_id;
                     loadConversations();
+                    updateSidebarUsageStats(data.usage);
                 }
             } catch (error) {
                 removeTypingIndicator();
@@ -1354,6 +1557,63 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Usage Stats
+        async function updateUsageStats() {
+            try {
+                const response = await fetch('/api/usage/stats');
+                const stats = await response.json();
+                console.log('Usage Stats:', stats);
+                // You can display this in a modal or sidebar if needed
+            } catch (error) {
+                console.error('Failed to load usage stats:', error);
+            }
+        }
+
+        // Usage Stats
+        let totalTokens = 0;
+        let totalCost = 0;
+
+        function updateSidebarUsageStats(usage) {
+            if (usage) {
+                totalTokens += usage.total_tokens;
+                totalCost += usage.cost;
+
+                document.getElementById('total-tokens').textContent = totalTokens.toLocaleString();
+                document.getElementById('total-cost').textContent = `$${totalCost.toFixed(4)}`;
+            }
+        }
+
+        async function loadTotalUsageStats() {
+            try {
+                const response = await fetch('/api/conversations');
+                const conversations = await response.json();
+
+                let tokens = 0;
+                let cost = 0;
+
+                // Calculate from all conversations
+                for (const conv of conversations) {
+                    const convResponse = await fetch(`/api/conversations/${conv.id}`);
+                    const convData = await convResponse.json();
+
+                    for (const msg of convData.messages || []) {
+                        if (msg.role === 'assistant' && !msg.is_error) {
+                            tokens += (msg.total_tokens || 0);
+                            cost += (msg.cost || 0);
+                        }
+                    }
+                }
+
+                totalTokens = tokens;
+                totalCost = cost;
+
+                document.getElementById('total-tokens').textContent = tokens.toLocaleString();
+                document.getElementById('total-cost').textContent = `$${cost.toFixed(4)}`;
+            } catch (error) {
+                console.error('Failed to load usage stats:', error);
+            }
         }
 
         // Theme
@@ -1409,7 +1669,7 @@
             try {
                 const response = await fetch('/api/keys');
                 const status = await response.json();
-                
+
                 for (const [provider, info] of Object.entries(status)) {
                     const statusEl = document.getElementById(`status-${provider}`);
                     if (info.configured) {
@@ -1463,7 +1723,7 @@
                     document.getElementById('key-openai').value = '';
                     document.getElementById('key-anthropic').value = '';
                     document.getElementById('key-google').value = '';
-                    
+
                     await loadApiKeyStatus();
                     closeSettings();
                 } else {
@@ -1472,6 +1732,101 @@
             } catch (error) {
                 console.error('Failed to save settings:', error);
                 alert('Failed to save API keys');
+            }
+        }
+
+        // Usage Stats Modal
+        async function openUsageStats() {
+            document.getElementById('usage-modal').classList.add('show');
+            await loadUsageStatsData();
+        }
+
+        function closeUsageStats() {
+            document.getElementById('usage-modal').classList.remove('show');
+        }
+
+        function closeUsageOnOverlay(event) {
+            if (event.target.id === 'usage-modal') {
+                closeUsageStats();
+            }
+        }
+
+        async function loadUsageStatsData() {
+            const container = document.getElementById('usage-stats-content');
+            container.innerHTML = '<p style="color: var(--text-muted);">Loading...</p>';
+
+            try {
+                const response = await fetch('/api/usage/stats');
+                const stats = await response.json();
+
+                if (stats.total.total_tokens === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted);">No usage data yet. Start chatting to see your statistics!</p>';
+                    return;
+                }
+
+                let html = `
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 16px; color: var(--text-primary);">Overall Usage</h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Input Tokens</div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--text-primary);">${stats.total.input_tokens.toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Output Tokens</div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--text-primary);">${stats.total.output_tokens.toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Tokens</div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--text-primary);">${stats.total.total_tokens.toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Total Cost</div>
+                                <div style="font-size: 24px; font-weight: 600; color: var(--accent-color);">$${stats.total.cost.toFixed(4)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (Object.keys(stats.by_provider).length > 0) {
+                    html += '<h4 style="margin-bottom: 16px; color: var(--text-primary);">By Provider</h4>';
+
+                    for (const [provider, data] of Object.entries(stats.by_provider)) {
+                        const providerName = models[provider]?.name || provider;
+                        html += `
+                            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                    ${providerIcons[provider]}
+                                    <strong style="color: var(--text-primary);">${providerName}</strong>
+                                    <span style="color: var(--text-muted); font-size: 12px;">(${data.messages} messages)</span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px;">
+                                    <div>
+                                        <div style="color: var(--text-muted); font-size: 11px;">Input</div>
+                                        <div style="color: var(--text-primary);">${data.input_tokens.toLocaleString()}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--text-muted); font-size: 11px;">Output</div>
+                                        <div style="color: var(--text-primary);">${data.output_tokens.toLocaleString()}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--text-muted); font-size: 11px;">Total</div>
+                                        <div style="color: var(--text-primary);">${(data.input_tokens + data.output_tokens).toLocaleString()}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--text-muted); font-size: 11px;">Cost</div>
+                                        <div style="color: var(--accent-color); font-weight: 500;">$${data.cost.toFixed(4)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Failed to load usage stats:', error);
+                container.innerHTML = '<p style="color: #ef4444;">Failed to load usage statistics</p>';
             }
         }
     </script>
