@@ -12,7 +12,12 @@ class StorageService:
     @contextmanager
     def locked_file(filepath, mode='r'):
         """Context manager for locked file operations"""
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Get directory path
+        dirpath = os.path.dirname(filepath)
+        
+        # Only create directory if there is one
+        if dirpath:
+            os.makedirs(dirpath, exist_ok=True)
         
         # Create file if it doesn't exist
         if not os.path.exists(filepath) and 'r' in mode:

@@ -91,6 +91,10 @@ def setup_oauth(app, oauth):
     
     @app.route('/auth/google')
     def google_login():
+        # Check if credentials are configured
+        if not app.config.get('GOOGLE_CLIENT_ID') or not app.config.get('GOOGLE_CLIENT_SECRET'):
+            return redirect(url_for('auth.login_page') + '?error=Google OAuth not configured. Please add credentials to .env file')
+        
         redirect_uri = 'http://localhost:5000/auth/google/callback'
         print(f"\n=== GOOGLE OAUTH DEBUG ===")
         print(f"Redirect URI: {redirect_uri}")
@@ -98,12 +102,22 @@ def setup_oauth(app, oauth):
         print(f"Request URL: {request.url}")
         print(f"Request Host: {request.host}")
         print(f"=========================\n")
-        return google.authorize_redirect(redirect_uri)
+        
+        try:
+            return google.authorize_redirect(redirect_uri)
+        except Exception as e:
+            print(f"OAuth Error: {str(e)}")
+            return redirect(url_for('auth.login_page') + f'?error=OAuth error: {str(e)}')
     
     @app.route('/auth/google/callback')
     def google_callback():
         from services import UserService
-        user_service = UserService(app.config['SECRET_KEY'])
+        # Initialize UserService with proper parameters
+        user_service = UserService(
+            secret_key=app.config['SECRET_KEY'],
+            users_file=app.config.get('USERS_FILE', 'users.json'),
+            user_data_dir=app.config.get('USER_DATA_DIR', 'user_data')
+        )
         
         try:
             token = google.authorize_access_token()
