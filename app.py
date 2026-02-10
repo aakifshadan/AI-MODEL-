@@ -1,9 +1,12 @@
 """AI Chat Hub - Main Application"""
 from flask import Flask
 from authlib.integrations.flask_client import OAuth
+from sqlalchemy.orm import scoped_session
 
 from config import Config
-from services import UserService, AIService
+from services import AIService
+from services.database_service import DatabaseService
+from models.database import get_engine, get_session_maker
 from routes import register_routes
 from routes.auth import setup_oauth
 
@@ -13,12 +16,15 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
+    # Initialize database
+    engine = get_engine(app.config['DATABASE_URL'])
+    SessionLocal = scoped_session(get_session_maker(engine))
+    
     # Initialize services
-    user_service = UserService(
-        secret_key=app.config['SECRET_KEY'],
-        users_file=app.config['USERS_FILE'],
-        user_data_dir=app.config['USER_DATA_DIR']
-    )
+    def get_db_service():
+        session = SessionLocal()
+        return DatabaseService(session, app.config['SECRET_KEY'])
+    
     ai_service = AIService()
     
     # Setup OAuth
@@ -26,7 +32,12 @@ def create_app():
     setup_oauth(app, oauth)
     
     # Register routes
-    register_routes(app, user_service, ai_service)
+    register_routes(app, get_db_service, ai_service)
+    
+    # Cleanup database sessions
+    @app.teardown_appcontext
+    def cleanup_db(error):
+        SessionLocal.remove()
     
     return app
 

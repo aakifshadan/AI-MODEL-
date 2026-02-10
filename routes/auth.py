@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 
 
-def create_auth_blueprint(user_service):
+def create_auth_blueprint(get_db_service):
     """Create authentication blueprint"""
     auth_bp = Blueprint('auth', __name__)
     
@@ -29,29 +29,33 @@ def create_auth_blueprint(user_service):
         if len(password) < 6:
             return jsonify({'error': 'Password must be at least 6 characters'}), 400
         
-        users = user_service.load_users()
+        db_service = get_db_service()
         
         # Check if email exists
-        for user in users.values():
-            if user.get('email') == email:
-                return jsonify({'error': 'Email already registered'}), 400
+        existing_user = db_service.get_user_by_email(email)
+        if existing_user:
+            return jsonify({'error': 'Email already registered'}), 400
         
         # Create new user
-        user_id = str(uuid.uuid4())
-        users[user_id] = {
-            'id': user_id,
-            'email': email,
-            'name': name or email.split('@')[0],
-            'password_hash': generate_password_hash(password, method='pbkdf2:sha256'),
-            'auth_type': 'email',
-            'created_at': datetime.now().isoformat()
-        }
-        user_service.save_users(users)
+        password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+        user = db_service.create_user(
+            email=email,
+            name=name or email.split('@')[0],
+            password_hash=password_hash,
+            auth_type='email'
+        )
         
         # Log them in
-        session['user_id'] = user_id
+        session['user_id'] = user.id
         
-        return jsonify({'success': True, 'user': {'id': user_id, 'email': email, 'name': users[user_id]['name']}})
+        return jsonify({
+            'success': True, 
+            'user': {
+                'id': user.id, 
+                'email': user.email, 
+                'name': user.name
+            }
+        })
     
     @auth_bp.route('/auth/login', methods=['POST'])
     def login():
@@ -59,15 +63,23 @@ def create_auth_blueprint(user_service):
         email = data.get('email', '').lower().strip()
         password = data.get('password', '')
         
-        users = user_service.load_users()
+        db_service = get_db_service()
+        user = db_service.get_user_by_email(email)
         
-        for user_id, user in users.items():
-            if user.get('email') == email and user.get('auth_type') == 'email':
-                if check_password_hash(user.get('password_hash', ''), password):
-                    session['user_id'] = user_id
-                    return jsonify({'success': True, 'user': {'id': user_id, 'email': email, 'name': user['name']}})
-                else:
-                    return jsonify({'error': 'Invalid password'}), 401
+        if user and user.auth_type == 'email':
+            if check_password_hash(user.password_hash, password):
+                session['user_id'] = user.id
+                db_service.update_user_login(user.id)
+                return jsonify({
+                    'success': True, 
+                    'user': {
+                        'id': user.id, 
+                        'email': user.email, 
+                        'name': user.name
+                    }
+                })
+            else:
+                return jsonify({'error': 'Invalid password'}), 401
         
         return jsonify({'error': 'User not found'}), 404
     
@@ -111,13 +123,15 @@ def setup_oauth(app, oauth):
     
     @app.route('/auth/google/callback')
     def google_callback():
-        from services import UserService
-        # Initialize UserService with proper parameters
-        user_service = UserService(
-            secret_key=app.config['SECRET_KEY'],
-            users_file=app.config.get('USERS_FILE', 'users.json'),
-            user_data_dir=app.config.get('USER_DATA_DIR', 'user_data')
-        )
+        from services.database_service import DatabaseService
+        from models.database import get_engine, get_session_maker
+        from sqlalchemy.orm import scoped_session
+        
+        # Initialize database service
+        engine = get_engine(app.config['DATABASE_URL'])
+        SessionLocal = scoped_session(get_session_maker(engine))
+        session_db = SessionLocal()
+        db_service = DatabaseService(session_db, app.config['SECRET_KEY'])
         
         try:
             token = google.authorize_access_token()
@@ -130,31 +144,30 @@ def setup_oauth(app, oauth):
             name = user_info.get('name', email.split('@')[0])
             picture = user_info.get('picture', '')
             
-            users = user_service.load_users()
-            
             # Find or create user
-            user_id = None
-            for uid, user in users.items():
-                if user.get('email') == email:
-                    user_id = uid
-                    users[uid]['picture'] = picture
-                    users[uid]['name'] = name
-                    break
+            user = db_service.get_user_by_email(email)
             
-            if not user_id:
-                user_id = str(uuid.uuid4())
-                users[user_id] = {
-                    'id': user_id,
-                    'email': email,
-                    'name': name,
-                    'picture': picture,
-                    'auth_type': 'google',
-                    'created_at': datetime.now().isoformat()
-                }
+            if user:
+                # Update existing user
+                db_service.update_user(user.id, 
+                    name=name, 
+                    picture_url=picture
+                )
+            else:
+                # Create new user
+                user = db_service.create_user(
+                    email=email,
+                    name=name,
+                    picture_url=picture,
+                    auth_type='google'
+                )
             
-            user_service.save_users(users)
-            session['user_id'] = user_id
+            db_service.update_user_login(user.id)
+            session['user_id'] = user.id
             
             return redirect(url_for('chat.index'))
         except Exception as e:
+            print(f"OAuth callback error: {str(e)}")
             return redirect(url_for('auth.login_page') + f'?error={str(e)}')
+        finally:
+            session_db.close()

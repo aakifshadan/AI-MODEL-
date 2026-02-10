@@ -1,5 +1,21 @@
+# Environment
 .env
+
+# Data files
 api_keys.json
 users.json
+users.json.backup
 user_data/
-.vscode
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.Python
+
+database/
+user_data.backup

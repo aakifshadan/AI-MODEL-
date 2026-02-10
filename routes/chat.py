@@ -18,7 +18,7 @@ def login_required(f):
     return decorated_function
 
 
-def create_chat_blueprint(user_service, ai_service):
+def create_chat_blueprint(get_db_service, ai_service):
     """Create chat blueprint"""
     chat_bp = Blueprint('chat', __name__)
     
@@ -31,13 +31,14 @@ def create_chat_blueprint(user_service, ai_service):
     @login_required
     def chat():
         user_id = session['user_id']
-        user_data = user_service.load_user_data(user_id)
+        db_service = get_db_service()
         
         data = request.json
         user_message = data.get("message")
         provider = data.get("provider", "openai")
         model = data.get("model", "gpt-4o")
         conv_id = data.get("conversation_id")
+        stream = data.get("stream", True)  # Enable streaming by default
         
         # Get API key
         from flask import current_app
@@ -46,54 +47,61 @@ def create_chat_blueprint(user_service, ai_service):
             'ANTHROPIC_API_KEY': current_app.config['ANTHROPIC_API_KEY'],
             'GEMINI_API_KEY': current_app.config['GEMINI_API_KEY']
         }
-        api_key = user_service.get_api_key(user_id, provider, fallback_keys)
+        api_key = db_service.get_api_key(user_id, provider)
+        if not api_key:
+            # Try fallback keys
+            api_key = fallback_keys.get(f'{provider.upper()}_API_KEY', '')
         
         if not api_key:
             return jsonify({"error": f"API key not configured for {MODELS[provider]['name']}. Please add your API key in Settings."}), 400
         
-        if 'conversations' not in user_data:
-            user_data['conversations'] = {}
-        
         # Get or create conversation
-        if conv_id and conv_id in user_data['conversations']:
-            conv = user_data['conversations'][conv_id]
-            conv["provider"] = provider
-            conv["model"] = model
+        if conv_id:
+            conv = db_service.get_conversation(conv_id)
+            if not conv or conv.user_id != user_id:
+                return jsonify({"error": "Conversation not found"}), 404
+            # Update provider/model if changed
+            if conv.provider != provider or conv.model != model:
+                db_service.update_conversation(conv_id, provider=provider, model=model)
         else:
-            conv_id = str(uuid.uuid4())
-            user_data['conversations'][conv_id] = {
-                "id": conv_id,
-                "title": user_message[:50] + "..." if len(user_message) > 50 else user_message,
-                "messages": [],
-                "provider": provider,
-                "model": model,
-                "timestamp": datetime.now().isoformat()
-            }
-            conv = user_data['conversations'][conv_id]
+            # Create new conversation
+            title = user_message[:50] + "..." if len(user_message) > 50 else user_message
+            conv = db_service.create_conversation(user_id, title, provider, model)
+            conv_id = conv.id
         
-        conv["messages"].append({"role": "user", "content": user_message})
+        # Add user message
+        db_service.create_message(conv_id, "user", user_message)
         
-        if len(conv["messages"]) == 1:
-            conv["title"] = user_message[:50] + "..." if len(user_message) > 50 else user_message
-
+        # Get conversation messages for context
+        messages = db_service.get_conversation_messages(conv_id)
+        message_list = [
+            {"role": msg.role, "content": msg.content} 
+            for msg in messages
+        ]
+        
+        # Use streaming if requested
+        if stream:
+            return chat_stream_response(conv_id, provider, model, message_list, api_key, db_service, user_id)
+        
+        # Non-streaming response (legacy)
         try:
-            result = ai_service.generate_response(provider, model, conv["messages"], api_key)
+            result = ai_service.generate_response(provider, model, message_list, api_key)
             
             # Calculate cost
             cost = calculate_cost(provider, model, result["input_tokens"], result["output_tokens"])
             
-            conv["messages"].append({
-                "role": "assistant", 
-                "content": result["content"],
-                "provider": provider,
-                "model": model,
-                "input_tokens": result["input_tokens"],
-                "output_tokens": result["output_tokens"],
-                "total_tokens": result["total_tokens"],
-                "cost": cost
-            })
-            conv["timestamp"] = datetime.now().isoformat()
-            user_service.save_user_data(user_id, user_data)
+            # Add assistant message
+            db_service.create_message(
+                conv_id, "assistant", result["content"],
+                provider=provider, model=model,
+                input_tokens=result["input_tokens"],
+                output_tokens=result["output_tokens"],
+                total_tokens=result["total_tokens"],
+                cost=cost
+            )
+            
+            # Update API key usage
+            db_service.update_api_key_usage(user_id, provider)
             
             return jsonify({
                 "response": result["content"],
@@ -110,15 +118,13 @@ def create_chat_blueprint(user_service, ai_service):
 
         except Exception as e:
             error_message = f"Error: {str(e)}"
-            conv["messages"].append({
-                "role": "assistant",
-                "content": error_message,
-                "provider": provider,
-                "model": model,
-                "is_error": True
-            })
-            conv["timestamp"] = datetime.now().isoformat()
-            user_service.save_user_data(user_id, user_data)
+            
+            # Add error message
+            db_service.create_message(
+                conv_id, "assistant", error_message,
+                provider=provider, model=model,
+                is_error=True, error_message=str(e)
+            )
             
             return jsonify({
                 "error": str(e),
@@ -126,5 +132,54 @@ def create_chat_blueprint(user_service, ai_service):
                 "provider": provider,
                 "model": model
             }), 500
+    
+    def chat_stream_response(conv_id, provider, model, message_list, api_key, db_service, user_id):
+        """Handle streaming chat response"""
+        import json
+        from flask import Response
+        
+        def generate():
+            full_response = ""
+            try:
+                # Send initial metadata
+                yield f"data: {json.dumps({'type': 'start', 'conversation_id': conv_id})}\n\n"
+                
+                # Stream the response
+                for chunk in ai_service.generate_response_stream(provider, model, message_list, api_key):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+                
+                # Estimate tokens (rough approximation)
+                input_tokens = sum(len(m["content"].split()) for m in message_list)
+                output_tokens = len(full_response.split())
+                total_tokens = input_tokens + output_tokens
+                cost = calculate_cost(provider, model, input_tokens, output_tokens)
+                
+                # Save the complete message to database
+                db_service.create_message(
+                    conv_id, "assistant", full_response,
+                    provider=provider, model=model,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=total_tokens,
+                    cost=cost
+                )
+                
+                # Update API key usage
+                db_service.update_api_key_usage(user_id, provider)
+                
+                # Send completion metadata
+                yield f"data: {json.dumps({'type': 'done', 'usage': {'input_tokens': input_tokens, 'output_tokens': output_tokens, 'total_tokens': total_tokens, 'cost': round(cost, 6)}})}\n\n"
+                
+            except Exception as e:
+                error_message = f"Error: {str(e)}"
+                db_service.create_message(
+                    conv_id, "assistant", error_message,
+                    provider=provider, model=model,
+                    is_error=True, error_message=str(e)
+                )
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+        
+        return Response(generate(), mimetype='text/event-stream')
     
     return chat_bp

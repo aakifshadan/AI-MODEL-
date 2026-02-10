@@ -18,7 +18,13 @@ class Config:
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
     
-    # Data storage
+    # Database
+    DATABASE_URL = os.environ.get(
+        'DATABASE_URL',
+        'mysql+pymysql://chatapp:password@localhost/ai_chat_hub'
+    )
+    
+    # Legacy data storage (for backup)
     USERS_FILE = 'users.json'
     USER_DATA_DIR = 'user_data'
     

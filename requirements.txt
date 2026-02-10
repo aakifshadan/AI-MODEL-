@@ -6,3 +6,11 @@ google-generativeai
 cryptography
 authlib
 requests
+
+# Database
+sqlalchemy
+pymysql
+
+# Optional: MCP Integration
+# mcp
+# anthropic-mcp

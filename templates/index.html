@@ -399,6 +399,133 @@
             padding-left: 24px;
         }
 
+        /* Streaming and Typing Indicator */
+        .streaming-content {
+            min-height: 20px;
+        }
+
+        /* Thinking Indicator - Enhanced A++ UX */
+        .thinking-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: linear-gradient(90deg, 
+                rgba(99, 102, 241, 0.05) 0%, 
+                rgba(99, 102, 241, 0.1) 50%, 
+                rgba(99, 102, 241, 0.05) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .thinking-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+
+        .thinking-dots {
+            display: inline-flex;
+            gap: 3px;
+            margin-left: -2px;
+        }
+
+        .thinking-dots span {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+            animation: thinkingDot 1.4s infinite ease-in-out;
+            opacity: 0.3;
+        }
+
+        .thinking-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .thinking-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes thinkingDot {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0) scale(1);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-4px) scale(1.2);
+            }
+        }
+
+        /* Streaming cursor effect */
+        .streaming-content::after {
+            content: '▋';
+            animation: blink 1s infinite;
+            color: var(--accent-color);
+            margin-left: 2px;
+        }
+
+        .streaming-content.streaming-complete::after {
+            display: none;
+        }
+
+        @keyframes blink {
+            0%, 49% {
+                opacity: 1;
+            }
+            50%, 100% {
+                opacity: 0;
+            }
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-8px);
+            }
+        }
+
         .message-content li {
             margin-bottom: 6px;
         }
@@ -1491,7 +1618,33 @@
             // Show loading state
             isLoading = true;
             document.getElementById('send-btn').disabled = true;
-            showTypingIndicator();
+            
+            // Create assistant message container with "Thinking..." indicator
+            const wrapper = document.getElementById('messages-wrapper');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            if (welcomeScreen) {
+                welcomeScreen.remove();
+            }
+
+            const modelName = models[provider] ? (models[provider].models[model] || model) : '';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            messageDiv.id = 'streaming-message';
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${providerIcons[provider]}</div>
+                <div class="message-content">
+                    ${modelName ? `<div class="model-tag">${modelName}</div>` : ''}
+                    <div class="thinking-indicator">
+                        <span class="thinking-text">Thinking</span>
+                        <span class="thinking-dots">
+                            <span>.</span><span>.</span><span>.</span>
+                        </span>
+                    </div>
+                    <div class="streaming-content" style="display: none;"></div>
+                </div>
+            `;
+            wrapper.appendChild(messageDiv);
+            scrollToBottom();
 
             try {
                 const response = await fetch('/api/chat', {
@@ -1501,30 +1654,88 @@
                         message,
                         provider,
                         model,
-                        conversation_id: currentConversationId
+                        conversation_id: currentConversationId,
+                        stream: true
                     })
                 });
 
-                const data = await response.json();
-
-                removeTypingIndicator();
-
-                if (data.error) {
-                    addMessage('assistant', `Error: ${data.error}`, data.provider || provider, data.model || model, true);
-                    // Update conversation ID even on error
-                    if (data.conversation_id) {
-                        currentConversationId = data.conversation_id;
-                        loadConversations();
-                    }
-                } else {
-                    addMessage('assistant', data.response, data.provider, data.model, false, data.usage);
-                    currentConversationId = data.conversation_id;
-                    loadConversations();
-                    updateSidebarUsageStats(data.usage);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Request failed');
                 }
+
+                // Handle streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+                const contentDiv = messageDiv.querySelector('.streaming-content');
+                const thinkingIndicator = messageDiv.querySelector('.thinking-indicator');
+                let hasStartedStreaming = false;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === 'start') {
+                                currentConversationId = data.conversation_id;
+                            } else if (data.type === 'content') {
+                                // Hide thinking indicator and show streaming content on first chunk
+                                if (!hasStartedStreaming) {
+                                    // Smooth transition from thinking to streaming
+                                    thinkingIndicator.style.transition = 'opacity 0.3s ease-out';
+                                    thinkingIndicator.style.opacity = '0';
+                                    
+                                    setTimeout(() => {
+                                        thinkingIndicator.style.display = 'none';
+                                        contentDiv.style.display = 'block';
+                                        contentDiv.style.animation = 'fadeIn 0.3s ease-in';
+                                    }, 300);
+                                    
+                                    hasStartedStreaming = true;
+                                }
+                                
+                                fullResponse += data.content;
+                                contentDiv.innerHTML = marked.parse(fullResponse);
+                                // Highlight code blocks
+                                contentDiv.querySelectorAll('pre code').forEach(block => {
+                                    hljs.highlightElement(block);
+                                });
+                                scrollToBottom();
+                            } else if (data.type === 'done') {
+                                messageDiv.id = '';
+                                // Remove cursor effect when done
+                                contentDiv.style.removeProperty('--show-cursor');
+                                contentDiv.classList.add('streaming-complete');
+                                loadConversations();
+                                updateSidebarUsageStats(data.usage);
+                            } else if (data.type === 'error') {
+                                messageDiv.classList.add('error');
+                                thinkingIndicator.style.display = 'none';
+                                contentDiv.style.display = 'block';
+                                contentDiv.innerHTML = `Error: ${data.error}`;
+                            }
+                        }
+                    }
+                }
+
             } catch (error) {
-                removeTypingIndicator();
-                addMessage('assistant', `Error: ${error.message}`, provider, model, true);
+                const messageDiv = document.getElementById('streaming-message');
+                if (messageDiv) {
+                    messageDiv.classList.add('error');
+                    const contentDiv = messageDiv.querySelector('.streaming-content');
+                    const thinkingIndicator = messageDiv.querySelector('.thinking-indicator');
+                    thinkingIndicator.style.display = 'none';
+                    contentDiv.style.display = 'block';
+                    contentDiv.innerHTML = `Error: ${error.message}`;
+                    messageDiv.id = '';
+                }
             } finally {
                 isLoading = false;
                 document.getElementById('send-btn').disabled = false;
